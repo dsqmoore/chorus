@@ -1220,7 +1220,7 @@ describe ChorusInstaller do
     context "if alpine package exists" do
       before do
         FileUtils.mkdir_p(installer.alpine_source_path)
-        File.open("#{installer.alpine_source_path}/Alpine_Bundle_Rel2.9_single_linux_20130726-0601.zip", 'w') do |f|
+        File.open("#{installer.alpine_source_path}/alpine-3.0.0.0.38-e970d467.sh", 'w') do |f|
           f.puts "i am alpine"
         end
       end
@@ -1234,56 +1234,6 @@ describe ChorusInstaller do
       it 'returns false' do
         installer.alpine_exists?.should be_false
       end
-    end
-  end
-
-  describe "#configure_alpine" do
-    before do
-      installer.destination_path = '/usr/local/chorus'
-      stub_version
-      FileUtils.mkdir_p(installer.alpine_source_path)
-      File.open("#{installer.alpine_source_path}/Alpine_Bundle_Rel2.9_single_linux_20130726-0601.zip", 'w') do |f|
-        f.puts "i am alpine"
-      end
-      FileUtils.mkdir_p("#{installer.alpine_destination_path}/apache-tomcat-7.0.30/conf/")
-      FileUtils.mkdir_p("#{installer.alpine_destination_path}/ALPINE_DATA_REPOSITORY/configuration/")
-
-      File.open("#{installer.alpine_destination_path}/apache-tomcat-7.0.30/conf/server.xml", 'w') do |f|
-        f.puts <<-XML
-<Connector port="8080" protocol="HTTP/1.1"
-connectionTimeout="20000"
-redirectPort="8443" />
-        XML
-      end
-
-      stub(installer).extract_alpine
-      stub(installer).set_properties
-    end
-
-    it "unzips alpine into the appropriate place" do
-      stub(installer).extract_alpine(File.join("vendor", "alpine", "Alpine_Bundle_Rel2.9_single_linux_20130726-0601.zip"))
-      installer.configure_alpine
-    end
-
-    it "sets properties in alpine's config to enable chorus mode" do
-      installer.configure_alpine
-
-      alpine_config = File.read("#{installer.alpine_destination_path}/ALPINE_DATA_REPOSITORY/configuration/alpine.config")
-      alpine_config.should == <<-CONFIG
-chorus.active = true
-chorus.port = 8080
-      CONFIG
-    end
-
-    it "sets properties in alpine's tomcat config to set port" do
-      installer.configure_alpine
-
-      changed_xml = File.read("#{installer.alpine_destination_path}/apache-tomcat-7.0.30/conf/server.xml")
-      changed_xml.should == <<-XML
-<Connector port="9090" protocol="HTTP/1.1"
-connectionTimeout="20000"
-redirectPort="8443" />
-      XML
     end
   end
 

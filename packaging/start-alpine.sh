@@ -14,5 +14,6 @@ if ( test -f $ALPINE_PID_FILE ) && ( kill -0 `cat $ALPINE_PID_FILE` > /dev/null 
     log "alpine already running as process `cat $ALPINE_PID_FILE`."
 else
     log "starting alpine"
-    CATALINA_PID=$ALPINE_PID_FILE $ALPINE_HOME/startup_for_chorus.sh
+    CATALINA_PID=$ALPINE_PID_FILE $ALPINE_HOME/alpine_control.sh start >/dev/null
+    wait_for_start $ALPINE_PID_FILE
 fi

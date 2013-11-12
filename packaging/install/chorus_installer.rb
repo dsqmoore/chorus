@@ -29,10 +29,6 @@ class ChorusInstaller
     File.join(release_path, 'vendor', 'alpine')
   end
 
-  def alpine_destination_path
-    File.join(destination_path, 'alpine')
-  end
-
   def initialize(options={})
     @installer_home = options[:installer_home]
     @version_detector = options[:version_detector]
@@ -343,13 +339,12 @@ class ChorusInstaller
   end
 
   def link_current_to_release
-    if File.exists?("#{destination_path}/current")
-      previous_version = File.readlink("#{destination_path}/current")
-      @old_release_cleaner.remove_except(release_path, previous_version)
-      File.delete("#{destination_path}/current")
-    end
-    FileUtils.ln_sf(release_path, "#{destination_path}/current")
+    link_to_current 'current', release_path
     FileUtils.ln_sf("#{release_path}/packaging/chorus_control.sh", "#{destination_path}/chorus_control.sh")
+  end
+
+  def link_to_current_alpine_release
+    link_to_current 'alpine-current', alpine_release_path
   end
 
   def extract_postgres
@@ -517,6 +512,10 @@ class ChorusInstaller
     "#{destination_path}/releases/#{version}"
   end
 
+  def alpine_release_path
+    "#{destination_path}/alpine-releases/#{alpine_version}"
+  end
+
   def eula
     eula_by_brand
   end
@@ -550,23 +549,25 @@ class ChorusInstaller
   end
 
   def configure_alpine
-    alpine_installer = Dir.glob(File.join(alpine_source_path, '*.zip')).first
-    log "Extracting #{alpine_installer} to #{alpine_destination_path}"
+    alpine_installer = Dir.glob(File.join(alpine_source_path, '*.sh')).first
+    log "Extracting #{alpine_installer} to #{alpine_release_path}"
     extract_alpine(alpine_installer)
 
-    log "Configuring alpine"
-    set_properties( { 'workflow.enabled' => true, 'workflow.url' => 'http://localhost:9090'} )
-    set_alpine_properties
+    log 'Configuring alpine' do
+      @logger.debug('Preparing Alpine Data Repository')
+      unless File.exists?("#{destination_path}/shared/ALPINE_DATA_REPOSITORY") then
+        log 'No Alpine Data Repository detected, creating...'
+        FileUtils.cp_r("#{alpine_release_path}/ALPINE_DATA_REPOSITORY", "#{destination_path}/shared")
+        set_alpine_properties
+      end
+      set_properties( { 'workflow.enabled' => true, 'workflow.url' => 'http://localhost:9090'} )
+    end
 
-    log "Setting tomcat port"
-    server_xml_filename = Dir.glob(File.join(alpine_destination_path, 'apache-tomcat*', 'conf', 'server.xml')).first
-    server_xml = File.read(server_xml_filename)
-    server_xml.gsub!('port="8080"', 'port="9090"')
-    File.open(server_xml_filename, 'w').write(server_xml)
+    link_to_current_alpine_release
   end
 
   def extract_alpine(alpine_installer)
-    system("unzip -qo #{alpine_installer} -d #{alpine_destination_path}")
+    @executor.exec("sh #{alpine_installer} --target #{alpine_release_path} --noexec")
   end
 
   def set_properties(new_properties)
@@ -581,10 +582,8 @@ class ChorusInstaller
 chorus.active = true
 chorus.port = 8080
     CONFIG
-    alpine_config_filename = "#{alpine_destination_path}/ALPINE_DATA_REPOSITORY/configuration/alpine.config"
+    alpine_config_filename = "#{destination_path}/shared/ALPINE_DATA_REPOSITORY/configuration/alpine.config"
     File.open(alpine_config_filename, 'w') {|f| f.write(alpine_config)}
-    stuff = File.open(alpine_config_filename).read()
-    log "#{stuff} from #{alpine_config_filename}"
   end
 
   private
@@ -593,12 +592,25 @@ chorus.port = 8080
     @version ||= File.read("#{chorus_installation_path}/version_build").strip
   end
 
+  def alpine_version
+    @alpine_version ||= File.read("#{alpine_source_path}/version_build").strip
+  end
+
   def chorus_exec(command)
     @logger.capture_output("PATH=#{release_path}/postgres/bin:$PATH && #{command}") || raise(InstallerErrors::CommandFailed, command)
   end
 
   def chorus_control(args)
     @executor.chorus_control(args)
+  end
+
+  def link_to_current(link_name, rel_path)
+    if File.exists?("#{destination_path}/#{link_name}")
+      previous_version = File.readlink("#{destination_path}/#{link_name}")
+      @old_release_cleaner.remove_except(rel_path, previous_version)
+      File.delete("#{destination_path}/#{link_name}")
+    end
+    FileUtils.ln_sf(rel_path, "#{destination_path}/#{link_name}")
   end
 
   CHORUS_PSQL = <<-CHORUS_PSQL

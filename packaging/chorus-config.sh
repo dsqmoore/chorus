@@ -12,8 +12,9 @@ if [ -e $CHORUS_HOME/current ]; then
     CHORUS_HOME=$CHORUS_HOME/current
 fi
 
-if [ "$ALPINE_HOME" = "" ] && [ -e `dirname $CHORUS_HOME`/alpine ]; then
-    export ALPINE_HOME=`dirname $CHORUS_HOME`/alpine
+if [ "$ALPINE_HOME" = "" ] && [ -e `dirname $CHORUS_HOME`/alpine-current ]; then
+    export ALPINE_HOME=`dirname $CHORUS_HOME`/alpine-current
+    export ALPINE_DATA_REPOSITORY=$ORIGINAL_CHORUS_HOME/shared/ALPINE_DATA_REPOSITORY
 fi
 
 if [ "$RAILS_ENV" = "" ]; then
