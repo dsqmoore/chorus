@@ -549,7 +549,6 @@ class ChorusInstaller
   end
 
   def configure_alpine
-    alpine_installer = Dir.glob(File.join(alpine_source_path, '*.sh')).first
     log "Extracting #{alpine_installer} to #{alpine_release_path}"
     extract_alpine(alpine_installer)
 
@@ -593,7 +592,11 @@ chorus.port = 8080
   end
 
   def alpine_version
-    @alpine_version ||= File.read("#{alpine_source_path}/version_build").strip
+    @alpine_version ||= File.basename(alpine_installer, '.sh')
+  end
+
+  def alpine_installer
+    @alpine_installer ||= Dir.glob(File.join(alpine_source_path, '*.sh')).first
   end
 
   def chorus_exec(command)

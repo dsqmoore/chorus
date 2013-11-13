@@ -1217,20 +1217,60 @@ describe ChorusInstaller do
       stub_version
     end
 
-    context "if alpine package exists" do
+    context 'if alpine package exists' do
+      let(:alpine_version_new) { '3.0-asdfsdf' }
+
       before do
         FileUtils.mkdir_p(installer.alpine_source_path)
         File.open("#{installer.alpine_source_path}/alpine-3.0.0.0.38-e970d467.sh", 'w') do |f|
           f.puts "i am alpine"
         end
+        stub(installer).alpine_version { alpine_version_new }
       end
 
       it 'returns true' do
         installer.alpine_exists?.should be_true
       end
+
+      describe '#link_current_to_release' do
+        let(:previous_version) { '/usr/local/chorus/alpine-releases/3-old' }
+        let(:new_version) { '/usr/local/chorus/alpine-releases/' + alpine_version_new }
+        before do
+          installer.destination_path = '/usr/local/chorus'
+          stub(installer).version { '2.2.0.0' }
+          FileUtils.mkdir_p previous_version
+        end
+
+        it 'creates a symlink to the new release from alpine-current' do
+          installer.link_to_current_alpine_release
+
+          File.readlink('/usr/local/chorus/alpine-current').should == new_version
+        end
+
+        context 'when there is an existing link to current' do
+          before do
+            mock(old_release_cleaner).remove_except(new_version, previous_version)
+          end
+
+          it 'should overwrite the existing link to current' do
+            FileUtils.ln_s(previous_version, '/usr/local/chorus/alpine-current')
+            mock(File).delete('/usr/local/chorus/alpine-current') # FakeFS workaround
+            installer.link_to_current_alpine_release
+
+            File.readlink('/usr/local/chorus/alpine-current').should == new_version
+          end
+        end
+
+        context 'when there is no existing link to current' do
+          it 'should not try to remove directories, because this is probably a fresh install' do
+            do_not_allow(old_release_cleaner).remove_except
+            installer.link_to_current_alpine_release
+          end
+        end
+      end
     end
 
-    context "if alpine package does not exist" do
+    context 'if alpine package does not exist' do
       it 'returns false' do
         installer.alpine_exists?.should be_false
       end
