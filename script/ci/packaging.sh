@@ -11,9 +11,8 @@ fi
 . script/ci/setup.sh
 
 echo "checking for an alpine package"
-if [[ "${ALPINE_PACKAGE}" ]]; then
-    echo "fetching alpine package from ${ALPINE_PACKAGE}"
-    (mkdir -p vendor/alpine; cd vendor/alpine; wget --quiet "${ALPINE_PACKAGE}")
+if [[ $(ls vendor/alpine/*.sh 2> /dev/null | wc -l) != "0" ]]; then
+    echo "packaging with alpine"
     chmod +x vendor/alpine/*.sh
 fi
 
