@@ -187,7 +187,7 @@ class ChorusInstaller
   def create_shared_structure
     FileUtils.mkdir_p("#{destination_path}/shared")
 
-    if install_mode == :fresh && !(Dir.entries("#{destination_path}/shared") - ['.', '..']).empty?
+    if fresh? && !(Dir.entries("#{destination_path}/shared") - ['.', '..']).empty?
       raise InstallerErrors::InstallAborted, "#{destination_path}/shared must be empty"
     end
 
@@ -557,9 +557,8 @@ class ChorusInstaller
       unless File.exists?("#{destination_path}/shared/ALPINE_DATA_REPOSITORY") then
         log 'No Alpine Data Repository detected, creating...'
         FileUtils.cp_r("#{alpine_release_path}/ALPINE_DATA_REPOSITORY", "#{destination_path}/shared")
-        set_alpine_properties
       end
-      set_properties( { 'workflow.enabled' => true, 'workflow.url' => 'http://localhost:9090'} )
+      set_properties( { 'workflow.enabled' => true } ) if fresh?
     end
 
     link_to_current_alpine_release
@@ -574,15 +573,6 @@ class ChorusInstaller
     properties = Properties.load_file(properties_file)
     properties.merge!(new_properties)
     Properties.dump_file(properties, properties_file)
-  end
-
-  def set_alpine_properties
-    alpine_config = <<-CONFIG
-chorus.active = true
-chorus.port = 8080
-    CONFIG
-    alpine_config_filename = "#{destination_path}/shared/ALPINE_DATA_REPOSITORY/configuration/alpine.config"
-    File.open(alpine_config_filename, 'w') {|f| f.write(alpine_config)}
   end
 
   private

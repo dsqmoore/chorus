@@ -143,7 +143,7 @@ oracle.enabled = true
 
 #Workflow
 workflow.enabled = true
-workflow.url = http://localhost:8070
+workflow.url = http://localhost:9090
 
 #Mail
 smtp.address=localhost
