@@ -15,6 +15,10 @@ fi
 if [ "$ALPINE_HOME" = "" ] && [ -e `dirname $CHORUS_HOME`/alpine-current ]; then
     export ALPINE_HOME=`dirname $CHORUS_HOME`/alpine-current
     export ALPINE_DATA_REPOSITORY=$ORIGINAL_CHORUS_HOME/shared/ALPINE_DATA_REPOSITORY
+else
+    echo "Using existing alpine environment......."
+    export ALPINE_HOME=$ALPINE_HOME
+    export ALPINE_DATA_REPOSITORY=$ALPINE_DATA_REPOSITORY
 fi
 
 if [ "$RAILS_ENV" = "" ]; then

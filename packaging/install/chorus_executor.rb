@@ -59,11 +59,15 @@ class ChorusExecutor
   end
 
   def chorus_control(command)
-    exec "CHORUS_HOME=#{release_path} #{release_path}/packaging/chorus_control.sh #{command}"
+    exec "CHORUS_HOME=#{release_path} #{alpine_env} #{release_path}/packaging/chorus_control.sh #{command}"
   end
 
   def previous_chorus_control(command)
-    exec "CHORUS_HOME=#{@destination_path}/current #{@destination_path}/chorus_control.sh #{command}", "#{@destination_path}/current"
+    exec "CHORUS_HOME=#{@destination_path}/current #{alpine_env} #{@destination_path}/chorus_control.sh #{command}", "#{@destination_path}/current"
+  end
+
+  def alpine_env
+    "ALPINE_HOME=#{@destination_path}/alpine-current ALPINE_DATA_REPOSITORY=#{@destination_path}/shared/ALPINE_DATA_REPOSITORY"
   end
 
   def if_debug(arg)
