@@ -10,6 +10,10 @@ bin=`cd "$bin"; pwd`
 
 ALPINE_PID_FILE="$ALPINE_HOME"/alpine.pid
 
+log "debugging alpine..."
+log "ALPINE_HOME=${ALPINE_HOME}"
+log "ALPINE_DATA_REPOSITORY=${ALPINE_DATA_REPOSITORY}"
+
 if [ -f $ALPINE_PID_FILE ]; then
   if kill -0 `cat $ALPINE_PID_FILE` > /dev/null 2>&1; then
     log "stopping alpine "
